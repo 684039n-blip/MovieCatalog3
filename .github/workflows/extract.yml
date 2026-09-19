@@ -8,35 +8,34 @@ on:
 jobs:
   extract:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Дозволяє GitHub Actions робити пуш у репозиторій
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Find and extract ZIP
         run: |
-          # Шукаємо перший доступний ZIP-файл
+          # Використовуємо ls (літера L), а не 1s (цифра 1)
           ZIP_FILE=$(ls *.zip 2>/dev/null | head -n 1)
           
           if [ -n "$ZIP_FILE" ]; then
             echo "Found ZIP: $ZIP_FILE"
             
-            # Розпаковуємо архів
-            unzip -q "$ZIP_FILE"
+            # Видаляємо старий README щоб не конфліктував
+            rm -f README.md
             
-            # Видаляємо оригінальний архів
+            # Розархівовуємо файл (-o = перезаписувати без запитань)
+            unzip -o "$ZIP_FILE"
             rm "$ZIP_FILE"
             
-            # Налаштовуємо Git для коміту
-            git config user.name "GitHub Actions"
-            git config user.email "actions@github.com"
+            # Налаштування Git та коміт
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             
-            # Додаємо всі розпаковані файли та видалений ZIP
             git add .
-            
-            # Робимо коміт (якщо є зміни) та пушимо
-            git commit -m "Extract project files" || exit 0
+            git commit -m "Extract project files" || echo "No changes to commit"
             git push
           else
             echo "No ZIP file found"
           fi
-          
