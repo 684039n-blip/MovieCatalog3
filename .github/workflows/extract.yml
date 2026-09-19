@@ -1,0 +1,42 @@
+name: Extract ZIP
+
+on:
+  push:
+    paths:
+      - '*.zip'
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Find and extract ZIP
+        run: |
+          # Шукаємо перший доступний ZIP-файл
+          ZIP_FILE=$(ls *.zip 2>/dev/null | head -n 1)
+          
+          if [ -n "$ZIP_FILE" ]; then
+            echo "Found ZIP: $ZIP_FILE"
+            
+            # Розпаковуємо архів
+            unzip -q "$ZIP_FILE"
+            
+            # Видаляємо оригінальний архів
+            rm "$ZIP_FILE"
+            
+            # Налаштовуємо Git для коміту
+            git config user.name "GitHub Actions"
+            git config user.email "actions@github.com"
+            
+            # Додаємо всі розпаковані файли та видалений ZIP
+            git add .
+            
+            # Робимо коміт (якщо є зміни) та пушимо
+            git commit -m "Extract project files" || exit 0
+            git push
+          else
+            echo "No ZIP file found"
+          fi
+          
